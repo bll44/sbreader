@@ -9,8 +9,9 @@ session = requests.Session()
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 
 def login():
-    login_data = {'ctl00$MainContent$ctlLogin$_UserName': 'cents109',
-                  'ctl00$MainContent$ctlLogin$_Password': 'BLATCH92',
+    creds = [line.rstrip('\n') for line in open(os.getcwd() + '/.login')]
+    login_data = {'ctl00$MainContent$ctlLogin$_UserName': creds[0],
+                  'ctl00$MainContent$ctlLogin$_Password': creds[1],
                   'ctl00$MainContent$ctlLogin$BtnSubmit': 'Login'}
     page = session.get('http://everysport247.com/default.aspx').content
     soup = BeautifulSoup(page, "html.parser")
@@ -20,7 +21,7 @@ def login():
 
     session.post('http://everysport247.com/default.aspx', login_data)
 
-    get_nfl_lines()
+    # get_nfl_lines()
 
 
 def get_nfl_lines():

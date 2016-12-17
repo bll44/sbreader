@@ -21,7 +21,7 @@ def login():
 
     session.post('http://everysport247.com/default.aspx', login_data)
 
-    # get_nfl_lines()
+    get_nfl_lines()
 
 
 def get_nfl_lines():

@@ -69,15 +69,6 @@ def get_nfl_lines():
 
     for g in games:
         print vars(g)
-    # for row in rows_filtered:
-    #     # get game date
-    #     game_date = row.contents[1].string
-    #     # cell with team name (3)
-    #     td = row.contents[3]
-    #     for string in td.strings:
-    #         team = string
-    #
-    # print len(rows_filtered)
 
 
 if __name__ == '__main__':

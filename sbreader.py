@@ -31,7 +31,12 @@ def login():
 
     session.post('http://everysport247.com/default.aspx', login_data)
 
-    get_nfl_lines()
+    nfl_lines = get_nfl_lines()
+    past_lines = get_past_lines()
+    spreadcnc(nfl_lines, past_lines)
+
+    for line in nfl_lines:
+        insert_game(line)
 
 
 def get_nfl_lines():
@@ -62,12 +67,16 @@ def get_nfl_lines():
             date = row.contents[1].string.strip()
             g.date += date + ' '
             g.teams.append(team_name)
-            for s in row.contents[4].strings:
-                g.ats_line.append(s.replace(u'\xbd', '.5'))
-            for s in row.contents[5].strings:
-                g.ou_line.append(s.replace(u'\xbd', '.5'))
-            for s in row.contents[6].strings:
-                g.moneyline.append(s.replace(u'\xbd', '.5'))
+            g.guid = row.contents[4].input['value'][2:9]
+            g.ats_line.append(row.contents[4].input['value'][10:].replace('_', ' '))
+            # for s in row.contents[4].strings:
+            #     g.ats_line.append(s.replace(u'\xbd', '.5'))
+            g.ou_line.append(row.contents[5].input['value'][10:].replace('_', ' '))
+            # for s in row.contents[5].strings:
+            #     g.ou_line.append(s.replace(u'\xbd', '.5'))
+            g.moneyline.append(row.contents[6].input['value'][12:])
+            # for s in row.contents[6].strings:
+            #     g.moneyline.append(s.replace(u'\xbd', '.5'))
 
             reset += 1
             if reset > 2:
@@ -86,10 +95,12 @@ def get_nfl_lines():
             year = datetime.now().year
         g.date = date.strftime('%Y-%m-%d %H:%M').replace('1900', str(year))
 
-    for g in games:
-        insert_game(g)
-
-    cnx.close()
+    return games
+    # for g in games:
+    #     insert_game(g)
+    #
+    # spreadcnc()
+    # cnx.close()
 
 def insert_game(game):
     cursor = cnx.cursor()
@@ -97,10 +108,10 @@ def insert_game(game):
     today = datetime.now()
 
     add_game = ("INSERT INTO games "
-                "(gameid, date, team1, team2, ou1, ou2, ats1, ats2, ml1, ml2) "
-                "VALUES (%(gameid)s, %(date)s, %(team1)s, %(team2)s, %(ou1)s, %(ou2)s, %(ats1)s, %(ats2)s, %(ml1)s, %(ml2)s)")
+                "(gameid, date, team1, team2, ou1, ou2, ats1, ats2, ml1, ml2, update_time) "
+                "VALUES (%(gameid)s, %(date)s, %(team1)s, %(team2)s, %(ou1)s, %(ou2)s, %(ats1)s, %(ats2)s, %(ml1)s, %(ml2)s, %(update)s)")
     data_game = {
-        'gameid': str(uuid.uuid4()),
+        'gameid': game.guid,
         'date': game.date,
         'team1': game.teams[0],
         'team2': game.teams[1],
@@ -109,12 +120,47 @@ def insert_game(game):
         'ats1': game.ats_line[0],
         'ats2': game.ats_line[1],
         'ml1': game.moneyline[0],
-        'ml2': game.moneyline[1]
+        'ml2': game.moneyline[1],
+        'update': datetime.now()
     }
 
     cursor.execute(add_game, data_game)
     cnx.commit()
     cursor.close()
+
+def get_past_lines():
+    cursor = cnx.cursor()
+
+    from_date = datetime.now() - timedelta(seconds=1200)
+    to_date = datetime.now()
+
+    query_games = ("SELECT * FROM games WHERE update_time > %(from_date)s")
+    cursor.execute(query_games, {'from_date': from_date})
+
+    past_games = []
+    row = cursor.fetchone()
+    while row is not None:
+        g = game.Game()
+        data = dict(zip(cursor.column_names, row))
+        g.teams.append(data['team1'])
+        g.teams.append(data['team2'])
+        g.guid = data['gameid']
+        g.ats_line.append(data['ats1'])
+        g.ats_line.append(data['ats2'])
+        g.ou_line.append(data['ou1'])
+        g.ou_line.append(data['ou2'])
+        g.moneyline.append(data['ml1'])
+        g.moneyline.append(data['ml2'])
+        g.date = data['date']
+        g.update_time = data['update_time']
+        past_games.append(g)
+        row = cursor.fetchone()
+
+    cursor.close()
+
+    return past_games
+
+def spreadcnc(new_lines, past_lines):
 
 
 if __name__ == '__main__':

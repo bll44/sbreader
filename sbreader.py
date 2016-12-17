@@ -52,11 +52,13 @@ def get_nfl_lines():
             g.date += date + ' '
             g.teams.append(team_name)
             for s in row.contents[4].strings:
-                g.spread.append(s)
-
+                g.ats_line.append(s)
+            for s in row.contents[5].strings:
+                g.ou_line.append(s)
+            for s in row.contents[6].strings:
+                g.moneyline.append(s)
 
             reset += 1
-
             if reset > 2:
                 games.append(g)
                 g = game.Game()

@@ -1,8 +1,6 @@
 
 
 class Game:
-    teams = []
-    date = ''
 
     def __init__(self):
         self.teams = []

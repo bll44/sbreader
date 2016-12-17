@@ -134,7 +134,7 @@ def get_past_lines():
     from_date = datetime.now() - timedelta(seconds=1200)
     to_date = datetime.now()
 
-    query_games = ("SELECT * FROM games WHERE update_time > %(from_date)s")
+    query_games = ("SELECT * FROM games WHERE update_time > %(from_date)s ORDER BY update_time DESC")
     cursor.execute(query_games, {'from_date': from_date})
 
     past_games = []
@@ -161,6 +161,29 @@ def get_past_lines():
     return past_games
 
 def spreadcnc(new_lines, past_lines):
+    data = []
+    for nl in new_lines:
+        guid = nl.guid
+        current_ats = nl.ats_line[0]
+        current_ou = nl.ou_line[0]
+        current_ml = nl.moneyline[0]
+        print guid
+        for pl in past_lines:
+            # print pl.guid
+            if str(pl.guid) == guid:
+                print pl.guid
+                past_ats = pl.ats_line[0]
+                print past_ats
+                past_ou = pl.ou_line[0]
+                past_ml = pl.moneyline[0]
+                if (current_ats == past_ats and
+                    current_ou == past_ou and
+                    current_ml == past_ml):
+                    print 'no change'
+                    break
+                else:
+                    print 'change'
+                    break
 
 
 if __name__ == '__main__':
